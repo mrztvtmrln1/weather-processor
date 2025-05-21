@@ -1,5 +1,6 @@
 package main.service;
 
+import lombok.RequiredArgsConstructor;
 import main.dto.DailyWeatherSummaryDto;
 import main.dto.WeatherResponseDto;
 import main.endpoints.publisher.DailyWeatherSummaryPublisher;
@@ -11,11 +12,12 @@ import main.repository.WeatherRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
+@RequiredArgsConstructor
 @Service
 public class WeatherService {
     private final WeatherRepository weatherRepository;
@@ -23,24 +25,17 @@ public class WeatherService {
     private final WeatherMapper weatherMapper;
     private final DailyWeatherSummaryPublisher dailyWeatherSummaryPublisher;
 
-    public WeatherService(WeatherRepository weatherRepository,
-                          WeatherAnomalyRepository weatherAnomalyRepository, WeatherMapper weatherMapper, DailyWeatherSummaryPublisher dailyWeatherSummaryPublisher) {
-        this.weatherRepository = weatherRepository;
-        this.weatherAnomalyRepository = weatherAnomalyRepository;
-        this.weatherMapper = weatherMapper;
-        this.dailyWeatherSummaryPublisher = dailyWeatherSummaryPublisher;
-    }
-
-    @Scheduled(cron = "0 11 * * * *")
+    @Scheduled(cron = "0 02 * * * *")
     @Transactional
     public void sendDailySummary() {
-        LocalDate today = LocalDate.now().minusDays(1);
-        LocalDateTime start = today.atStartOfDay();
-        LocalDateTime end = start.plusDays(1);
+        LocalDateTime start = LocalDate.now().atStartOfDay();
+        LocalDateTime end = LocalDateTime.now();
 
         List<DailyWeatherSummaryDto> summaries = weatherRepository.findDailySummary(start, end);
         System.out.println("trying to send daily weather to queue");
-        System.out.println(summaries);
+        System.out.println("Start: " + start);
+        System.out.println("End: " + end);
+        System.out.println("Summaries: " + summaries);
         dailyWeatherSummaryPublisher.publishSummaries(summaries);
         System.out.println("message sent to queue for telegram bot");
     }
